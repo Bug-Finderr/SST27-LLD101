@@ -1,5 +1,6 @@
 public class Demo09 {
     public static void main(String[] args) {
-        new OrderController().create("ORD-1");
+        OrderRepository orderRepo = new SqlOrderRepository();
+        new OrderController(orderRepo).create("ORD-1");
     }
 }
