@@ -1,37 +1,57 @@
 package com.example.orders;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-/**
- * Telescoping constructors + setters. Allows invalid states.
- */
 public class Order {
-    private String id;
-    private String customerEmail;
-    private final List<OrderLine> lines = new ArrayList<>();
-    private Integer discountPercent; // 0..100 expected, but not enforced
-    private boolean expedited;
-    private String notes;
+    private final String id;
+    private final String customerEmail;
+    private final List<OrderLine> lines;
+    private final Integer discountPercent;
+    private final boolean expedited;
+    private final String notes;
+    
+    private Order(Builder b) {
+        this.id = b.id;
+        this.customerEmail = b.email;
+        this.discountPercent = b.discount;
+        this.expedited = b.expedited;
+        this.notes = b.notes;
 
-    public Order(String id, String customerEmail) {
-        this.id = id;
-        this.customerEmail = customerEmail;
+        List<OrderLine> copy = new ArrayList<>(b.lines.size());
+        for (OrderLine l : b.lines)
+            copy.add(new OrderLine(l.getSku(), l.getQuantity(), l.getUnitPriceCents()));
+        this.lines = Collections.unmodifiableList(copy);
     }
+    public static class Builder {
+        private final String id;
+        private final String email;
+        private final List<OrderLine> lines = new ArrayList<>();
+        private Integer discount;
+        private boolean expedited;
+        private String notes;
 
-    public Order(String id, String customerEmail, Integer discountPercent) {
-        this(id, customerEmail);
-        this.discountPercent = discountPercent;
+        public Builder(String id, String email) { this.id = id; this.email = email; }
+
+        public Builder addLine(OrderLine l) { if (l != null) lines.add(l); return this; }
+        public Builder addLines(List<OrderLine> ls) { if (ls != null) lines.addAll(ls); return this; }
+        public Builder discount(Integer discount) { this.discount = discount; return this; }
+        public Builder expedited(boolean expedited) { this.expedited = expedited; return this; }
+        public Builder notes(String notes) { this.notes = notes; return this; }
+
+        public Order build() {
+            if (id == null || id.isBlank()) throw new IllegalStateException("id must not be blank");
+            if (!PricingRules.isValidEmail(email)) throw new IllegalStateException("invalid email");
+            if (!PricingRules.isValidDiscount(discount)) throw new IllegalStateException("discount must be 0..100");
+            if (lines.isEmpty()) throw new IllegalStateException("order must have at least one line");
+            return new Order(this);
+        }
     }
-
-    public void addLine(OrderLine line) { lines.add(line); }
-    public void setDiscountPercent(Integer discountPercent) { this.discountPercent = discountPercent; }
-    public void setExpedited(boolean expedited) { this.expedited = expedited; }
-    public void setNotes(String notes) { this.notes = notes; }
 
     public String getId() { return id; }
     public String getCustomerEmail() { return customerEmail; }
-    public List<OrderLine> getLines() { return lines; } // leaks internal list
+    public List<OrderLine> getLines() { return lines; }
     public Integer getDiscountPercent() { return discountPercent; }
     public boolean isExpedited() { return expedited; }
     public String getNotes() { return notes; }

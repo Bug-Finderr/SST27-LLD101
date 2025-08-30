@@ -10,7 +10,7 @@ public class UserProfile {
     private final String twitter;
     private final String github;
 
-    public UserProfile(Builder builder) {
+    private UserProfile(Builder builder) {
         this.id = builder.id;
         this.email = builder.email;
         this.phone = builder.phone;
